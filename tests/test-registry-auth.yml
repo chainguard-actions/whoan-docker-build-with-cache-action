@@ -1,0 +1,68 @@
+name: Test docker build with registry auth inputs
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_BUILDKIT: "0"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Pre-pull base image for faster build
+        run: docker pull alpine:3.18 || true
+
+      - name: Create test Dockerfile in workspace
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test-registry-auth-context"
+          printf 'FROM alpine:3.18\nRUN echo "hello from registry auth test"\n' \
+            > "$GITHUB_WORKSPACE/test-registry-auth-context/Dockerfile"
+
+      - id: action
+        uses: .
+        env:
+          DOCKER_BUILDKIT: "0"
+        with:
+          image_name: testuser/test-registry-auth-image
+          context: ${{ github.workspace }}/test-registry-auth-context
+          dockerfile: Dockerfile
+          image_tag: latest
+          registry: registry.example.com
+          username: testuser
+          password: testpassword
+          session: testsession
+          stages_image_name: testuser/test-registry-auth-image-stages
+          push_image_and_stages: "false"
+          pull_image_and_stages: "false"
+
+      - name: Assert FULL_IMAGE_NAME output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.FULL_IMAGE_NAME }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: FULL_IMAGE_NAME output is empty"
+            exit 1
+          fi
+          echo "PASS: FULL_IMAGE_NAME=$ACTUAL"
+
+      - name: Assert FULL_IMAGE_NAME contains registry and image name
+        env:
+          ACTUAL: ${{ steps.action.outputs.FULL_IMAGE_NAME }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [[ "$ACTUAL" != *"test-registry-auth-image"* ]]; then
+            echo "FAIL: expected FULL_IMAGE_NAME to contain 'test-registry-auth-image', got: $ACTUAL"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Assert Docker image was built
+        run: |
+          if ! docker images | grep -q "test-registry-auth-image"; then
+            echo "FAIL: Docker image 'test-registry-auth-image' not found in local images"
+            docker images
+            exit 1
+          fi
+          echo "PASS: Docker image found"

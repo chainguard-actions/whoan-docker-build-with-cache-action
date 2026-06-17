@@ -1,0 +1,47 @@
+name: Test docker build with compose file
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_BUILDKIT: "0"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Pre-pull base image for faster build
+        run: docker pull alpine:3.18 || true
+
+      - name: Create test compose context
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test-compose-context"
+          printf 'FROM alpine:3.18\nRUN echo "hello from compose test"\n' \
+            > "$GITHUB_WORKSPACE/test-compose-context/Dockerfile"
+          cat > "$GITHUB_WORKSPACE/test-compose-context/docker-compose.yml" <<'EOF'
+          version: "3"
+          services:
+            test-compose-svc:
+              build:
+                context: .
+                dockerfile: Dockerfile
+              image: testuser/test-compose-image:latest
+          EOF
+
+      - id: action
+        uses: .
+        env:
+          DOCKER_BUILDKIT: "0"
+        with:
+          compose_file: ${{ github.workspace }}/test-compose-context/docker-compose.yml
+          push_image_and_stages: "false"
+          pull_image_and_stages: "false"
+
+      - name: Assert Docker image was built via compose
+        run: |
+          if ! docker images | grep -q "test-compose-image"; then
+            echo "FAIL: Docker image 'test-compose-image' not found in local images"
+            docker images
+            exit 1
+          fi
+          echo "PASS: Docker image built via compose file found"

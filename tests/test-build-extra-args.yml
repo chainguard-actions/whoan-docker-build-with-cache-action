@@ -1,0 +1,53 @@
+name: Test docker build with extra build args
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_BUILDKIT: "0"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Pre-pull base image for faster build
+        run: docker pull alpine:3.18 || true
+
+      - name: Create test Dockerfile with ARG in workspace
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test-args-context"
+          printf 'FROM alpine:3.18\nARG MY_BUILD_ARG=default\nRUN echo "Build arg: $MY_BUILD_ARG"\n' \
+            > "$GITHUB_WORKSPACE/test-args-context/Dockerfile"
+
+      - id: action
+        uses: .
+        env:
+          DOCKER_BUILDKIT: "0"
+        with:
+          image_name: testuser/test-extra-args-image
+          context: ${{ github.workspace }}/test-args-context
+          dockerfile: Dockerfile
+          image_tag: latest
+          push_image_and_stages: "false"
+          pull_image_and_stages: "false"
+          build_extra_args: "--build-arg MY_BUILD_ARG=hello-from-test"
+
+      - name: Assert FULL_IMAGE_NAME output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.FULL_IMAGE_NAME }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: FULL_IMAGE_NAME output is empty"
+            exit 1
+          fi
+          echo "PASS: FULL_IMAGE_NAME=$ACTUAL"
+
+      - name: Assert Docker image was built
+        run: |
+          if ! docker images | grep -q "test-extra-args-image"; then
+            echo "FAIL: Docker image 'test-extra-args-image' not found in local images"
+            docker images
+            exit 1
+          fi
+          echo "PASS: Docker image found"
