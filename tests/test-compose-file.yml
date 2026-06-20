@@ -1,0 +1,26 @@
+name: Test Docker build with compose_file input
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          compose_file: ${{ github.workspace }}/tests/fixtures/compose-app/docker-compose.yml
+          push_image_and_stages: "false"
+          pull_image_and_stages: "false"
+        env:
+          DOCKER_BUILDKIT: "0"
+
+      - name: Assert Docker image was built via compose
+        run: |
+          if ! docker image inspect test/compose-app:latest > /dev/null 2>&1; then
+            echo "FAIL: Docker image test/compose-app:latest was not built"
+            exit 1
+          fi
+          echo "PASS: Docker image built via compose file exists"

@@ -1,0 +1,40 @@
+name: Test Docker build with custom image tag
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          image_name: test/custom-tag-image
+          image_tag: v1.2.3
+          context: ${{ github.workspace }}/tests/fixtures/simple-app
+          push_image_and_stages: "false"
+          pull_image_and_stages: "false"
+          build_extra_args: "--no-cache"
+        env:
+          DOCKER_BUILDKIT: "0"
+
+      - name: Assert FULL_IMAGE_NAME output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.FULL_IMAGE_NAME }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: FULL_IMAGE_NAME output is empty"
+            exit 1
+          fi
+          echo "PASS: FULL_IMAGE_NAME=$ACTUAL"
+
+      - name: Assert Docker image was built with custom tag
+        run: |
+          if ! docker image inspect test/custom-tag-image:v1.2.3 > /dev/null 2>&1; then
+            echo "FAIL: Docker image test/custom-tag-image:v1.2.3 was not built"
+            exit 1
+          fi
+          echo "PASS: Docker image with custom tag exists"
