@@ -8,6 +8,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
+| v7.0.1 | [`v7.0.1`](https://github.com/chainguard-actions/whoan-docker-build-with-cache-action/tree/v7.0.1) | [`a15bd94`](https://github.com/whoan/docker-build-with-cache-action/commit/a15bd94f7e821d5b01469ad8f16951027a135926) |
 | v8.0.1 | [`v8.0.1`](https://github.com/chainguard-actions/whoan-docker-build-with-cache-action/tree/v8.0.1) | [`5285033`](https://github.com/whoan/docker-build-with-cache-action/commit/5285033f96ed9eb66992113e5edd63747c71392e) |
 | v8.1.1 | [`v8.1.1`](https://github.com/chainguard-actions/whoan-docker-build-with-cache-action/tree/v8.1.1) | [`7957470`](https://github.com/whoan/docker-build-with-cache-action/commit/79574702d64f46f39ecaf1f1d771d45230e10b93) |
 
