@@ -1,0 +1,57 @@
+name: Test build with compose file
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create test Docker context and compose file
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test-compose-context/app"
+          printf 'FROM alpine:3.18\nRUN echo "hello from compose build"\n' \
+            > "$GITHUB_WORKSPACE/test-compose-context/app/Dockerfile"
+          cat > "$GITHUB_WORKSPACE/test-compose-context/docker-compose.yml" <<'EOF'
+          version: "3"
+          services:
+            app:
+              image: myregistry.example.com/myorg/compose-test-image:latest
+              build:
+                context: app
+                dockerfile: Dockerfile
+            other:
+              image: myregistry.example.com/myorg/other-image:latest
+              build:
+                context: app
+                dockerfile: Dockerfile
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          compose_file: ${{ github.workspace }}/test-compose-context/docker-compose.yml
+          services_regex: "app"
+          registry: myregistry.example.com
+          username: testuser
+          password: testpassword
+          context: ${{ github.workspace }}/test-compose-context
+          push_image_and_stages: "false"
+          pull_image_and_stages: "false"
+
+      - name: Assert Docker image was built from compose file
+        run: |
+          if ! docker image inspect myregistry.example.com/myorg/compose-test-image:latest > /dev/null 2>&1; then
+            echo "FAIL: Docker image 'myregistry.example.com/myorg/compose-test-image:latest' was not found locally"
+            exit 1
+          fi
+          echo "PASS: Docker image from compose file exists"
+
+      - name: Assert services_regex filtered correctly (other image not built)
+        run: |
+          if docker image inspect myregistry.example.com/myorg/other-image:latest > /dev/null 2>&1; then
+            echo "FAIL: 'other-image' should have been filtered out by services_regex 'app'"
+            exit 1
+          fi
+          echo "PASS: services_regex correctly filtered services"

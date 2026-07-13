@@ -1,0 +1,59 @@
+name: Test build with registry auth inputs
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create test Docker context
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/test-registry-context"
+          printf 'FROM alpine:3.18\nRUN echo "hello from registry auth build"\n' \
+            > "$GITHUB_WORKSPACE/test-registry-context/Dockerfile"
+
+      - id: action
+        uses: .
+        with:
+          image_name: myorg/test-registry-image
+          registry: ghcr.io
+          username: testuser
+          password: testpassword
+          session: testsession
+          stages_image_name: myorg/test-registry-image-stages
+          context: ${{ github.workspace }}/test-registry-context
+          dockerfile: Dockerfile
+          push_image_and_stages: "false"
+          pull_image_and_stages: "false"
+
+      - name: Assert FULL_IMAGE_NAME output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.FULL_IMAGE_NAME }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: FULL_IMAGE_NAME output is empty"
+            exit 1
+          fi
+          echo "PASS: FULL_IMAGE_NAME=$ACTUAL"
+
+      - name: Assert FULL_IMAGE_NAME contains registry
+        env:
+          ACTUAL: ${{ steps.action.outputs.FULL_IMAGE_NAME }}
+        run: |
+          echo "actual: $ACTUAL"
+          if [[ "$ACTUAL" != *"ghcr.io"* ]]; then
+            echo "FAIL: expected FULL_IMAGE_NAME to contain 'ghcr.io', got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Assert Docker image was built
+        run: |
+          if ! docker image inspect ghcr.io/myorg/test-registry-image:latest > /dev/null 2>&1; then
+            echo "FAIL: Docker image 'ghcr.io/myorg/test-registry-image:latest' was not found locally"
+            exit 1
+          fi
+          echo "PASS: Docker image with registry exists"
