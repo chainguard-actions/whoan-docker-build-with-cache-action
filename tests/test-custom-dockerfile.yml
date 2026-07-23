@@ -1,4 +1,4 @@
-name: Test build with custom image tag
+name: Test build with custom Dockerfile name
 on:
   workflow_dispatch:
 jobs:
@@ -10,9 +10,9 @@ jobs:
       - id: action
         uses: .
         with:
-          image_name: my-custom-image
-          image_tag: v1.2.3
-          context: tests/fixtures/custom-tag
+          image_name: custom-dockerfile-image
+          dockerfile: MyDockerfile
+          context: tests/fixtures/custom-df
           push_image_and_stages: false
           pull_image_and_stages: false
 
@@ -32,8 +32,8 @@ jobs:
           ACTUAL: ${{ steps.action.outputs.FULL_IMAGE_NAME }}
         run: |
           echo "actual: $ACTUAL"
-          if [[ "$ACTUAL" != *"my-custom-image"* ]]; then
-            echo "FAIL: expected FULL_IMAGE_NAME to contain 'my-custom-image', got: $ACTUAL"
+          if [[ "$ACTUAL" != *"custom-dockerfile-image"* ]]; then
+            echo "FAIL: expected FULL_IMAGE_NAME to contain 'custom-dockerfile-image', got: $ACTUAL"
             exit 1
           fi
           echo "PASS"

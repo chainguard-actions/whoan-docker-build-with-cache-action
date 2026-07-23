@@ -1,4 +1,4 @@
-name: Test build with custom image tag
+name: Test build with multiple image tags
 on:
   workflow_dispatch:
 jobs:
@@ -10,9 +10,9 @@ jobs:
       - id: action
         uses: .
         with:
-          image_name: my-custom-image
-          image_tag: v1.2.3
-          context: tests/fixtures/custom-tag
+          image_name: multi-tag-image
+          image_tag: latest,stable,1.0
+          context: tests/fixtures/multi-tag
           push_image_and_stages: false
           pull_image_and_stages: false
 
@@ -32,8 +32,8 @@ jobs:
           ACTUAL: ${{ steps.action.outputs.FULL_IMAGE_NAME }}
         run: |
           echo "actual: $ACTUAL"
-          if [[ "$ACTUAL" != *"my-custom-image"* ]]; then
-            echo "FAIL: expected FULL_IMAGE_NAME to contain 'my-custom-image', got: $ACTUAL"
+          if [[ "$ACTUAL" != *"multi-tag-image"* ]]; then
+            echo "FAIL: expected FULL_IMAGE_NAME to contain 'multi-tag-image', got: $ACTUAL"
             exit 1
           fi
           echo "PASS"

@@ -412,6 +412,5 @@ build_image
 tag_image
 push_image_and_stages
 
-_full_image_name=$(_get_full_image_name)
-_safe_full_image_name=$(printf '%s' "$_full_image_name" | tr -d '\n\r')
-echo "FULL_IMAGE_NAME=${_safe_full_image_name}" >> "$GITHUB_OUTPUT"
+safe=$(printf '%s' "$(_get_full_image_name)" | tr -d '\n\r')
+echo "FULL_IMAGE_NAME=$safe" >> "$GITHUB_OUTPUT"
