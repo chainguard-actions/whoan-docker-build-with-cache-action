@@ -1,4 +1,4 @@
-name: Test custom image tag
+name: Test multi-stage build (no push)
 on:
   workflow_dispatch:
 
@@ -11,9 +11,9 @@ jobs:
       - id: action
         uses: .
         with:
-          image_name: testns/test-custom-tag-image
-          image_tag: v1.2.3
-          context: tests/fixtures/simple
+          image_name: testns/test-multistage-image
+          image_tag: latest
+          context: tests/fixtures/multistage
           dockerfile: Dockerfile
           push_image_and_stages: false
           pull_image_and_stages: false
@@ -29,17 +29,12 @@ jobs:
           fi
           echo "PASS: FULL_IMAGE_NAME is set to '$ACTUAL'"
 
-      - name: Assert Docker image was tagged with custom tag
+      - name: Assert multi-stage Docker image was built locally
         run: |
           echo "Listing docker images..."
           docker images
-          if ! docker images | grep -q "test-custom-tag-image"; then
-            echo "FAIL: expected docker image 'test-custom-tag-image' to exist locally"
+          if ! docker images | grep -q "test-multistage-image"; then
+            echo "FAIL: expected docker image 'test-multistage-image' to exist locally"
             exit 1
           fi
-          if ! docker images | grep "test-custom-tag-image" | grep -q "v1.2.3"; then
-            echo "FAIL: expected docker image 'test-custom-tag-image' to have tag 'v1.2.3'"
-            docker images | grep "test-custom-tag-image"
-            exit 1
-          fi
-          echo "PASS: docker image 'test-custom-tag-image:v1.2.3' exists locally"
+          echo "PASS: docker image 'test-multistage-image' exists locally"

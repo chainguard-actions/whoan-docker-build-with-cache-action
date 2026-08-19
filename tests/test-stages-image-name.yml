@@ -1,4 +1,4 @@
-name: Test basic build (no push)
+name: Test stages_image_name input
 on:
   workflow_dispatch:
 
@@ -11,7 +11,8 @@ jobs:
       - id: action
         uses: .
         with:
-          image_name: testns/test-basic-image
+          image_name: testns/test-stages-name-image
+          stages_image_name: testns/custom-stages-cache
           context: tests/fixtures/simple
           dockerfile: Dockerfile
           push_image_and_stages: false
@@ -33,18 +34,18 @@ jobs:
           ACTUAL: ${{ steps.action.outputs.FULL_IMAGE_NAME }}
         run: |
           echo "actual FULL_IMAGE_NAME: $ACTUAL"
-          if [[ "$ACTUAL" != *"test-basic-image"* ]]; then
-            echo "FAIL: expected FULL_IMAGE_NAME to contain 'test-basic-image', got '$ACTUAL'"
+          if [[ "$ACTUAL" != *"test-stages-name-image"* ]]; then
+            echo "FAIL: expected FULL_IMAGE_NAME to contain 'test-stages-name-image', got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS: FULL_IMAGE_NAME contains 'test-basic-image'"
+          echo "PASS: FULL_IMAGE_NAME contains 'test-stages-name-image'"
 
       - name: Assert Docker image was built locally
         run: |
           echo "Listing docker images..."
           docker images
-          if ! docker images | grep -q "test-basic-image"; then
-            echo "FAIL: expected docker image 'test-basic-image' to exist locally"
+          if ! docker images | grep -q "test-stages-name-image"; then
+            echo "FAIL: expected docker image 'test-stages-name-image' to exist locally"
             exit 1
           fi
-          echo "PASS: docker image 'test-basic-image' exists locally"
+          echo "PASS: docker image 'test-stages-name-image' exists locally"

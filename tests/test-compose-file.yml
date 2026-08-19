@@ -1,4 +1,4 @@
-name: Test Docker build with compose_file input
+name: Test compose_file input
 on:
   workflow_dispatch:
 
@@ -11,16 +11,18 @@ jobs:
       - id: action
         uses: .
         with:
-          compose_file: ${{ github.workspace }}/tests/fixtures/compose-app/docker-compose.yml
-          push_image_and_stages: "false"
-          pull_image_and_stages: "false"
-        env:
-          DOCKER_BUILDKIT: "0"
+          compose_file: tests/fixtures/compose/docker-compose.yml
+          username: testuser
+          context: tests/fixtures
+          push_image_and_stages: false
+          pull_image_and_stages: false
 
-      - name: Assert Docker image was built via compose
+      - name: Assert Docker image from compose was built
         run: |
-          if ! docker image inspect test/compose-app:latest > /dev/null 2>&1; then
-            echo "FAIL: Docker image test/compose-app:latest was not built"
+          echo "Listing docker images..."
+          docker images
+          if ! docker images | grep -q "compose-test-image"; then
+            echo "FAIL: expected docker image 'compose-test-image' to exist locally"
             exit 1
           fi
-          echo "PASS: Docker image built via compose file exists"
+          echo "PASS: docker image 'compose-test-image' exists locally"

@@ -1,0 +1,7 @@
+version: "3"
+services:
+  app:
+    image: testuser/compose-test-image:latest
+    build:
+      context: simple
+      dockerfile: Dockerfile
