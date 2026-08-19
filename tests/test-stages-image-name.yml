@@ -1,4 +1,4 @@
-name: Test compose_file input
+name: Test stages_image_name input
 on:
   workflow_dispatch:
 jobs:
@@ -20,20 +20,28 @@ jobs:
       - id: action
         uses: .
         with:
-          compose_file: tests/fixtures/compose/docker-compose.yml
-          registry: myregistry.example.com
-          username: testuser
-          password: testpassword
-          context: tests/fixtures/compose
+          image_name: testns/test-stages-name-image
+          stages_image_name: testns/my-custom-stages-name
+          context: tests/fixtures/simple
           push_image_and_stages: false
           pull_image_and_stages: false
 
-      - name: Assert Docker image was built from compose file
+      - name: Assert FULL_IMAGE_NAME output is set
+        env:
+          ACTUAL: ${{ steps.action.outputs.FULL_IMAGE_NAME }}
         run: |
-          echo "Checking for compose-test-image..."
-          docker images
-          if ! docker images | grep -q "compose-test-image"; then
-            echo "FAIL: Docker image 'compose-test-image' not found after compose build"
+          echo "actual: $ACTUAL"
+          if [ -z "$ACTUAL" ]; then
+            echo "FAIL: FULL_IMAGE_NAME output is empty"
             exit 1
           fi
-          echo "PASS: Docker image built from compose file"
+          echo "PASS: FULL_IMAGE_NAME=$ACTUAL"
+
+      - name: Assert Docker image was built
+        run: |
+          if ! docker images | grep -q "test-stages-name-image"; then
+            echo "FAIL: Docker image 'test-stages-name-image' not found"
+            docker images
+            exit 1
+          fi
+          echo "PASS: Docker image found with custom stages_image_name"

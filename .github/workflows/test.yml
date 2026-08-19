@@ -1,0 +1,49 @@
+name: Test
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: Shellcheck
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+    - uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2
+
+    # Provides nice code review annotations for problems discovered by
+    # shellcheck.
+    - uses: reviewdog/action-shellcheck@4c07458293ac342d477251099501a718ae5ef86e # v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        reporter: github-pr-review
+        level: info
+
+    # As `reviewdog/action-shellcheck` does not fail the build on `style`
+    # errors, run `bewuethr/shellcheck-action` as a precaution. Can be removed
+    # once `reviewdog/action-shellcheck` fails the build on the specified
+    # `severity`.
+    - uses: bewuethr/shellcheck-action@80bac2daa9fcf95d648200a793d00060857e6dc4 # v2
+
+  docker:
+    name: Docker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2
+
+    - uses: ./
+      with:
+        username: ${{ github.repository_owner }}
+        password: "${{ secrets.GITHUB_TOKEN }}"
+        registry: ghcr.io
+        image_name: docker-build-with-cache-action
+        push_git_tag: true
+        push_image_and_stages: on:push

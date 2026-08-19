@@ -1,4 +1,4 @@
-name: Test custom image tag
+name: Test custom Dockerfile name
 on:
   workflow_dispatch:
 jobs:
@@ -10,9 +10,9 @@ jobs:
       - id: action
         uses: .
         with:
-          image_name: testns/test-tagged-image
-          image_tag: v1.2.3
-          context: tests/fixtures/simple
+          image_name: testns/test-custom-dockerfile-image
+          context: tests/fixtures/custom-dockerfile
+          dockerfile: MyDockerfile
           push_image_and_stages: false
           pull_image_and_stages: false
 
@@ -27,16 +27,11 @@ jobs:
           fi
           echo "PASS: FULL_IMAGE_NAME=$ACTUAL"
 
-      - name: Assert Docker image was built with custom tag
+      - name: Assert Docker image was built from custom Dockerfile
         run: |
-          if ! docker images | grep -q "test-tagged-image"; then
-            echo "FAIL: Docker image 'test-tagged-image' not found"
+          if ! docker images | grep -q "test-custom-dockerfile-image"; then
+            echo "FAIL: Docker image 'test-custom-dockerfile-image' not found"
             docker images
             exit 1
           fi
-          if ! docker images | grep "test-tagged-image" | grep -q "v1.2.3"; then
-            echo "FAIL: Docker image 'test-tagged-image:v1.2.3' not found"
-            docker images | grep "test-tagged-image" || true
-            exit 1
-          fi
-          echo "PASS: Docker image with tag v1.2.3 found"
+          echo "PASS: Docker image built from custom Dockerfile"

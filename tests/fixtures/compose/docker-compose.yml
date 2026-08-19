@@ -1,0 +1,7 @@
+version: "3"
+services:
+  app:
+    image: myregistry.example.com/testns/compose-test-image:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
